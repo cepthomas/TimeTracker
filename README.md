@@ -1,2 +1,3 @@
 # TimeTracker
-Trivial tool for a friend.
+
+Trivial tool for a friend. Otherwise no redeeming value.
