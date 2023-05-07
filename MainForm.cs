@@ -1,11 +1,14 @@
+using Microsoft.VisualBasic;
+
 namespace TimeTracker
 {
     public partial class MainForm : Form
     {
-        string _fp = "TT_data.csv";
-
+        string _dataPath = "";
+        string _dataFile = "TT_data.csv";
+        string _logFile = "TT_log.txt";
+        string _configFile = "config.txt";
         bool _dirty = false;
-
         List<Record> _records = new();
 
         public MainForm()
@@ -15,25 +18,58 @@ namespace TimeTracker
 
         protected override void OnLoad(EventArgs e)
         {
-            // Ensure user dir.
-            string localdir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string path = Path.Combine(localdir, "Ephemera", "TimeTracker");
-            DirectoryInfo di = new(path);
-            di.Create();
+            var cfig = File.ReadAllLines(_configFile);
+            foreach (var l in cfig)
+            {
+                if (l.StartsWith("#"))
+                {
+                    // skip comment
+                }
+                else
+                {
+                    var parts = l.Split('=', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts[0] == "data")
+                    {
+                        _dataPath = parts[1];
+                    }
+                }
+            }
 
-            _fp = Path.Combine(path, _fp);
+            _dataFile = Path.Combine(_dataPath, _dataFile);
+            _logFile = Path.Combine(_dataPath, _logFile);
 
-            if (File.Exists(_fp))
+            Log("Starting.");
+
+            if (File.Exists(_dataFile))
             {
                 _records.Clear();
-                File.ReadAllLines(_fp).ToList().ForEach(l => _records.Add(Record.Parse(l)));
+                var lines = File.ReadAllLines(_dataFile);
+                foreach (var l in lines)
+                {
+                    try
+                    {
+                        var rec = Record.Parse(l);
+                        _records.Add(rec);
+                    }
+                    catch (Exception)
+                    {
+                        Log($"Bad record:{l}");
+                        MessageBox.Show("Bad record");
+                    }
+                }
             }
 
             // Ensure that we have a record for current week.
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            if (_records.Count == 0 || _records[0].Date != today)
+            DateOnly monday = DateOnly.FromDateTime(DateTime.Now);
+
+            while(monday.DayOfWeek != DayOfWeek.Monday)
             {
-                _records.Insert(0, new Record() { Date = today });
+                monday = monday.AddDays(-1);
+            }
+
+            if (_records.Count == 0 || _records[0].Date != monday)
+            {
+                _records.Insert(0, new Record() { Date = monday });
             }
 
             _records.ForEach(x => { lbRecords.Items.Add(x.FormatForDisplay()); });
@@ -46,13 +82,13 @@ namespace TimeTracker
             if (_dirty)
             {
                 // Save file. Do some backups first.
-                try { File.Copy(_fp.Replace(".", "_2."), _fp.Replace(".", "_3."), true); } catch { }
-                try { File.Copy(_fp.Replace(".", "_1."), _fp.Replace(".", "_2."), true); } catch { }
-                try { File.Copy(_fp, _fp.Replace(".", "_1."), true); } catch { }
+                try { File.Copy(_dataFile.Replace(".", "_2."), _dataFile.Replace(".", "_3."), true); } catch { }
+                try { File.Copy(_dataFile.Replace(".", "_1."), _dataFile.Replace(".", "_2."), true); } catch { }
+                try { File.Copy(_dataFile, _dataFile.Replace(".", "_1."), true); } catch { }
 
                 var srecs = new List<string>();
                 _records.ForEach(r => srecs.Add(r.FormatForPersist()));
-                File.WriteAllLines(_fp, srecs);
+                File.WriteAllLines(_dataFile, srecs);
             }
 
             base.OnFormClosing(e);
@@ -68,7 +104,7 @@ namespace TimeTracker
                 using Editor ed = new()
                 {
                     Record = _records[i].Clone(),
-                    Text = $"Edit inutes for week of {_records[i].Date.ToString(Record.DT_FORMAT)}"
+                    Text = $"Edit minutes for week of {_records[i].Date.ToString(Record.DT_FORMAT)}"
                 };
 
                 if (ed.ShowDialog() == DialogResult.OK)
@@ -82,6 +118,11 @@ namespace TimeTracker
                     lbRecords.Items[i] = _records[i].FormatForDisplay();
                 }
             }
+        }
+
+        public void Log(string msg)
+        {
+            File.AppendAllText(_logFile, $"{DateTime.Now} {msg} {Environment.NewLine}");
         }
 
         void MakeFake()

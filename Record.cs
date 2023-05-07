@@ -6,8 +6,6 @@
 
         public static string[] DAYS = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 
-        public bool Valid { get; private set; } = true;
-
         public DateOnly Date { get; set; }
 
         public int[] DayMinutes { get; set; } = new int[DAYS.Length];
@@ -18,7 +16,6 @@
         public Record Clone()
         {
             Record record = new Record();
-            record.Valid = Valid;
             record.Date = Date;
             record.DayMinutes = (int[])DayMinutes.Clone();
             record.Total = Total;
@@ -28,19 +25,11 @@
         public static Record Parse(string srecord)
         {
             var record = new Record();
-
-            try
+            var parts = srecord.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            record.Date = DateOnly.ParseExact(parts[0], DT_FORMAT, null);
+            for (int i = 0; i < DAYS.Length; i++)
             {
-                var parts = srecord.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                record.Date = DateOnly.ParseExact(parts[0], DT_FORMAT, null);
-                for (int i = 0; i < DAYS.Length; i++)
-                {
-                    record.DayMinutes[i] = int.Parse(parts[i + 1]);
-                }
-            }
-            catch (Exception)
-            {
-                record.Valid = false;
+                record.DayMinutes[i] = int.Parse(parts[i + 1]);
             }
 
             return record;
