@@ -2,9 +2,9 @@
 {
     public class Record
     {
-        public static string DT_FORMAT = "MMM-dd-yyyy";
+        public static readonly string DT_FORMAT = "MMM-dd-yyyy";
 
-        public static string[] DAYS = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+        public static readonly string[] DAYS = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 
         public DateOnly Date { get; set; }
 
@@ -15,11 +15,12 @@
         /// <summary>Copy - clone.</summary>
         public Record Clone()
         {
-            Record record = new Record();
-            record.Date = Date;
-            record.DayMinutes = (int[])DayMinutes.Clone();
-            record.Total = Total;
-            return record;
+            return new()
+            {
+                Date = Date,
+                DayMinutes = (int[])DayMinutes.Clone(),
+                Total = Total
+            };
         }
 
         public static Record Parse(string srecord)
@@ -48,6 +49,7 @@
                 ls.Add(FormatInt(m));
                 total += m;
             }
+
             ls.Add(" ");
             ls.Add(FormatInt(total));
             return string.Join(' ', ls);

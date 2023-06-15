@@ -1,0 +1,2 @@
+#data=C:\Users\cepth\AppData\Local\Ephemera\TimeTracker
+data=C:\Users\cepth\OneDrive\Data

@@ -7,9 +7,9 @@ namespace TimeTracker
         string _dataPath = "";
         string _dataFile = "TT_data.csv";
         string _logFile = "TT_log.txt";
-        string _configFile = "config.txt";
+        readonly string _configFile = "config.txt";
         bool _dirty = false;
-        List<Record> _records = new();
+        readonly List<Record> _records = new();
 
         public MainForm()
         {
@@ -70,6 +70,7 @@ namespace TimeTracker
             if (_records.Count == 0 || _records[0].Date != monday)
             {
                 _records.Insert(0, new Record() { Date = monday });
+                _dirty = true;
             }
 
             _records.ForEach(x => { lbRecords.Items.Add(x.FormatForDisplay()); });
